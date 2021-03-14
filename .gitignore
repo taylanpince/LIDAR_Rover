@@ -1,0 +1,5 @@
+.DS_Store
+ros2/rover_ros/bags
+ros2/rover_ros/build
+ros2/rover_ros/install
+ros2/rover_ros/log
