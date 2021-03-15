@@ -360,7 +360,7 @@ long rightEncoderCount = 0;
 long lastMotorProcessingTime = 0;
 
 void processMotorPositions() {
-  if (millis() - lastMotorProcessingTime < 5000) {
+  if (millis() - lastMotorProcessingTime < 500) {
     return;
   }
 
@@ -392,7 +392,9 @@ void loop() {
   if (scanRunning) processScan();
   if (mpuInterrupt) processMPU();
 
-//  processMotorPositions();
+  processMotorPositions();
+
+  Serial2.flush();
 
   while (Serial2.available()) {
     char value = Serial2.read();
