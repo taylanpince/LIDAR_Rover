@@ -4,3 +4,6 @@ ros2/rover_ros/build
 ros2/rover_ros/install
 ros2/rover_ros/log
 ros2/differential_drive
+ros/build
+ros/devel
+ros/src/diff_drive
