@@ -234,6 +234,9 @@ int lastDistance = 0;
 int16_t quaternionValue[4];
 int16_t gyroValue[3];
 int16_t accelerationValue[3];
+int16_t *quaternion = quaternionValue;
+int16_t *gyro = gyroValue;
+int16_t *acceleration = accelerationValue;
 
 void writeOutputBuffer() {
   outputBuffer[0] = OUTPUT_BUFFER_BEGIN;
@@ -277,9 +280,9 @@ void processMPU() {
     
     lastMPUMessageTime = millis();
 
-    mpu.dmpGetQuaternion(&quaternionValue, mpuFIFOBuffer);
-    mpu.dmpGetAccel(&accelerationValue, mpuFIFOBuffer);
-    mpu.dmpGetGyro(&gyroValue, mpuFIFOBuffer);
+    mpu.dmpGetQuaternion(quaternion, mpuFIFOBuffer);
+    mpu.dmpGetAccel(acceleration, mpuFIFOBuffer);
+    mpu.dmpGetGyro(gyro, mpuFIFOBuffer);
     
     // Quaternion values
     outputBuffer[1] = DATA_TYPE_QUATERNION;
