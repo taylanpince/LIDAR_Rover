@@ -38,9 +38,7 @@
     </link>
     
     <!-- Robot Footprint -->
-    <link name="base_footprint">
-        <xacro:box_inertia m="20" w="0.001" h="0.001" d="0.001"/>
-    </link>
+    <link name="base_footprint" />
 
     <joint name="base_joint" type="fixed">
         <parent link="base_footprint"/>

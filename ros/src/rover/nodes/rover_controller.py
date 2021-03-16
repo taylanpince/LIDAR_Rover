@@ -61,8 +61,8 @@ class ArduinoController:
         
             return (data_type, (pos, dist))
         elif data_type == INCOMING_DATA_TYPE_MOTOR:
-            lmotor_data = int.from_bytes(payload[1:5], byteorder="big", signed=True)
-            rmotor_data = int.from_bytes(payload[5:9], byteorder="big", signed=True)
+            lmotor_data = int.from_bytes(payload[1:3], byteorder="big", signed=True)
+            rmotor_data = int.from_bytes(payload[3:5], byteorder="big", signed=True)
             
             return (data_type, (lmotor_data, rmotor_data))
         elif data_type == INCOMING_DATA_TYPE_QUATERNION:
@@ -132,35 +132,35 @@ class RoverController:
         self.right_motor_pos = 0
         self.left_speed = 0
         self.right_speed = 0
-        self.maxMotorSpeed = 3000
+        self.max_motor_speed = 3000
         
         self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
-        self.arduino = ArduinoController(serial_conn)
+        self.arduino = ArduinoController(self.serial_conn)
     
     def leftMotorCallback(self, speed):
-        self.left_speed = speed
+        self.left_speed = speed.data
         
-        motor_power = MAX_POWER * math.abs(self.left_speed) / self.max_motor_speed
+        motor_power = int(MAX_POWER * abs(self.left_speed) / self.max_motor_speed)
         motor_direction = DIRECTION_FORWARDS if self.left_speed >= 0 else DIRECTION_BACKWARDS
         
         self.arduino.send_command(MOTOR_LEFT, motor_direction, motor_power)
         
     def rightMotorCallback(self, speed):
-        self.right_speed = speed
+        self.right_speed = speed.data
         
-        motor_power = MAX_POWER * math.abs(self.right_speed) / self.max_motor_speed
+        motor_power = int(MAX_POWER * abs(self.right_speed) / self.max_motor_speed)
         motor_direction = DIRECTION_FORWARDS if self.right_speed >= 0 else DIRECTION_BACKWARDS
         
         self.arduino.send_command(MOTOR_RIGHT, motor_direction, motor_power)
 
-    
-    def main():
-        self.maxMotorSpeed = int(rospy.get_param('~max_motor_speed'))
+    def main(self):
+        rospy.init_node('rover_controller')
         
         lwheel_publisher = rospy.Publisher('~lwheel_ticks', Int32, queue_size=10)
         rwheel_publisher = rospy.Publisher('~rwheel_ticks', Int32, queue_size=10)
-        
-        rospy.init_node('rover_controller')
+
+        self.max_motor_speed = int(rospy.get_param('~max_motor_speed'))
+
         rate = rospy.Rate(10) # 10hz
         
         rospy.Subscriber('~lwheel_desired_rate', Int32, self.leftMotorCallback)
