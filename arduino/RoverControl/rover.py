@@ -19,11 +19,16 @@ COMMAND_END = b'.'
 MAX_POWER = 255
 
 INCOMING_DATA_TYPE_SCAN = 100
-INCOMING_DATA_TYPE_LEFT_MOTOR = 101
-INCOMING_DATA_TYPE_RIGHT_MOTOR = 102
+INCOMING_DATA_TYPE_MOTOR = 101
+INCOMING_DATA_TYPE_QUATERNION = 102
+INCOMING_DATA_TYPE_GYRO = 103
+INCOMING_DATA_TYPE_ACCELEROMETER = 104
+
+INCOMING_MESSAGE_BEGIN = 24
+INCOMING_MESSAGE_END = 23
 
 SCAN_START_COMMAND = b'S'
-SCAN_STOP_COMMAND = b'.'
+SCAN_STOP_COMMAND = b'X'
 
 AVG_STEPS_PER_SCAN = 3560
 MAX_SCAN_SIZE_CM = 500
@@ -92,24 +97,83 @@ class ArduinoController:
     def __init__(self, conn):
         self.conn = conn
     
-    def read_incoming_data(self):
-        if self.conn.in_waiting < 5:
-            return None
+    def extract_messages(self, payload):
+        messages = []
+        message = []
         
-        payload = list(self.conn.read(size=5))
+        for val in payload:
+            if val == INCOMING_MESSAGE_BEGIN:
+                message = []
+            elif val == INCOMING_MESSAGE_END:
+                if len(message) == 10:
+                    messages.append(message)
+            else:
+                message.append(val)
+        
+        return messages
+    
+    def parse_message(self, payload):
         data_type = payload[0]
-        print(payload)
+
         if data_type == INCOMING_DATA_TYPE_SCAN:
             pos = int.from_bytes(payload[1:3], byteorder="big")
-            dist = int.from_bytes(payload[3:], byteorder="big")
+            dist = int.from_bytes(payload[3:5], byteorder="big")
         
             return (data_type, (pos, dist))
-        elif data_type == INCOMING_DATA_TYPE_LEFT_MOTOR or data_type == INCOMING_DATA_TYPE_RIGHT_MOTOR:
-            motor_data = int.from_bytes(payload[1:], byteorder="big")
+        elif data_type == INCOMING_DATA_TYPE_MOTOR:
+            lmotor_data = int.from_bytes(payload[1:5], byteorder="big", signed=True)
+            rmotor_data = int.from_bytes(payload[5:9], byteorder="big", signed=True)
             
-            return (data_type, motor_data)
+            return (data_type, (lmotor_data, rmotor_data))
+        elif data_type == INCOMING_DATA_TYPE_QUATERNION:
+            w = int.from_bytes(payload[1:3], byteorder="big", signed=True)
+            x = int.from_bytes(payload[3:5], byteorder="big", signed=True)
+            y = int.from_bytes(payload[5:7], byteorder="big", signed=True)
+            z = int.from_bytes(payload[7:9], byteorder="big", signed=True)
+            
+            wf = float(w) / 16384.0
+            xf = float(x) / 16384.0
+            yf = float(y) / 16384.0
+            zf = float(z) / 16384.0
+            
+            return (data_type, (xf, yf, zf, wf))
+        elif data_type == INCOMING_DATA_TYPE_GYRO:
+            gx = int.from_bytes(payload[1:3], byteorder="big", signed=True)
+            gy = int.from_bytes(payload[3:5], byteorder="big", signed=True)
+            gz = int.from_bytes(payload[5:7], byteorder="big", signed=True)
+            
+            gxf = float(gx) * (4000.0 / 65536.0) * (math.pi / 180.0) * 25.0
+            gyf = float(gy) * (4000.0 / 65536.0) * (math.pi / 180.0) * 25.0
+            gzf = float(gz) * (4000.0 / 65536.0) * (math.pi / 180.0) * 25.0
+            
+            return (data_type, (gxf, gyf, gzf))
+        elif data_type == INCOMING_DATA_TYPE_ACCELEROMETER:
+            ax = int.from_bytes(payload[1:3], byteorder="big", signed=True)
+            ay = int.from_bytes(payload[3:5], byteorder="big", signed=True)
+            az = int.from_bytes(payload[5:7], byteorder="big", signed=True)
+            
+            axf = float(ax) * (8.0 / 65536.0) * 9.81
+            ayf = float(ay) * (8.0 / 65536.0) * 9.81
+            azf = float(az) * (8.0 / 65536.0) * 9.81
+            
+            return (data_type, (axf, ayf, azf))
         
         return None
+    
+    def read_incoming_data(self):
+        if self.conn.in_waiting < 12:
+            return []
+        
+        payload = list(self.conn.read_until(expected=bytes([INCOMING_MESSAGE_END]), size=24))
+        commands = []
+        
+        for message in self.extract_messages(payload):
+            command = self.parse_message(message)
+            
+            if command:
+                commands.append(command)
+        
+        return commands
     
     def send_button_command(self, command):
         self.conn.write(command)
@@ -157,11 +221,19 @@ def monitor_joystick():
     scanning = False
     map_points = []
     
+    last_motor_time = 0
     left_motor_pos = 0
     right_motor_pos = 0
     scanner_pos = 0
     scanner_dist = 0
     eventbutton = 0
+    current_speed = 0
+    
+    full_power_begin_time = 0
+    left_ticks_at_full_power_begin = 0
+    right_ticks_at_full_power_begin = 0
+    full_power_speed = 0
+    full_power_enabled = False
 
     while running:
         events = pygame.event.get()
@@ -178,22 +250,30 @@ def monitor_joystick():
                     arduino.send_button_command(SCAN_STOP_COMMAND)
                     scanning = False
         
-        incoming_payload = arduino.read_incoming_data()
+        incoming_commands = arduino.read_incoming_data()
         
-        if incoming_payload:
-            data_type, payload = incoming_payload
-            
-            if data_type == INCOMING_DATA_TYPE_SCAN:
-                scanner_pos, scanner_dist = payload
-            elif data_type == INCOMING_DATA_TYPE_LEFT_MOTOR:
-                left_motor_pos = payload
-            elif data_type == INCOMING_DATA_TYPE_RIGHT_MOTOR:
-                right_motor_pos = payload
+        for command in incoming_commands:
+            data_type, payload = command
+
+            if data_type == INCOMING_DATA_TYPE_MOTOR:
+                new_left_motor_pos, new_right_motor_pos = payload
+                
+                left_delta = new_left_motor_pos - left_motor_pos
+                right_delta = new_right_motor_pos - right_motor_pos
+                new_motor_time = time.time_ns()
+                
+                if last_motor_time > 0:
+                    time_delta = new_motor_time - last_motor_time
+                    current_speed = float(left_delta + right_delta) / 2.0 / time_delta
+                
+                left_motor_pos = new_left_motor_pos
+                right_motor_pos = new_right_motor_pos
         
         screen.fill(COLOR_WHITE)
         printer.reset()
         
-        printer.write(screen, "Last Event Button: {}".format(eventbutton))
+        printer.write(screen, "Current Speed: {:10.4f}".format(current_speed))
+        printer.write(screen, "Last Full Power Speed: {:10.4f}".format(full_power_speed))
         printer.write(screen, "Left Motor: {}".format(left_motor_pos))
         printer.write(screen, "Right Motor: {}".format(right_motor_pos))
         
@@ -224,10 +304,26 @@ def monitor_joystick():
         if now - last_command_time > SERIAL_BUFFER_TIME:
             last_command_time = now
             
+            old_power_total = abs(current_left_power + current_right_power)
+            
             left_power = controller.get_axis(1)
             right_power = controller.get_axis(3)
             left_speed = int(abs(left_power) * MAX_POWER)
             right_speed = int(abs(right_power) * MAX_POWER)
+            
+            full_power_enabled = (abs(left_power + right_power) == 2.0)
+            
+            # Did we just get into full power mode?
+            if old_power_total < 2.0 and full_power_enabled:
+                full_power_begin_time = time.time_ns()
+                left_ticks_at_full_power_begin = left_motor_pos
+                right_ticks_at_full_power_begin = right_motor_pos
+            elif old_power_total == 2.0 and not full_power_enabled:
+                left_delta = left_motor_pos - left_ticks_at_full_power_begin
+                right_delta = right_motor_pos - right_ticks_at_full_power_begin
+                time_delta = time.time_ns() - full_power_begin_time
+                print("Full power done | Left Delta: {} | Right Delta: {} | Time Delta: {}".format(left_delta, right_delta, time_delta))
+                full_power_speed = float((left_delta + right_delta) / 2.0 / time_delta)
             
             if left_power > 0.2 and current_left_power != left_power:
                 left_direction = DIRECTION_BACKWARDS
@@ -255,6 +351,9 @@ def monitor_joystick():
         else:
             left_speed = int(abs(current_left_power) * MAX_POWER)
             right_speed = int(abs(current_right_power) * MAX_POWER)
+
+        if full_power_enabled:
+            printer.write(screen, "Full Power ON")
 
         if current_left_power > 0.2:
             printer.write(screen, "Left Motor: Backwards {}".format(left_speed))

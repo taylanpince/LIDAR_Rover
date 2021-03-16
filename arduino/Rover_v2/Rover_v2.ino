@@ -355,8 +355,8 @@ void stopScan() {
   analogWrite(PWM_C, 0);
 }
 
-long leftEncoderCount = 0;
-long rightEncoderCount = 0;
+uint16_t leftEncoderCount = 0;
+uint16_t rightEncoderCount = 0;
 long lastMotorProcessingTime = 0;
 
 void processMotorPositions() {
@@ -368,15 +368,10 @@ void processMotorPositions() {
   rightEncoderCount = rightEncoder.getEncoderCount();
 
   outputBuffer[1] = DATA_TYPE_MOTOR_ENC;
-  outputBuffer[2] = (byte)((leftEncoderCount >> 24) & 0xFF);
-  outputBuffer[3] = (byte)((leftEncoderCount >> 16) & 0xFF);
-  outputBuffer[4] = (byte)((leftEncoderCount >> 8) & 0xFF);
-  outputBuffer[5] = (byte)((leftEncoderCount) & 0xFF);
-
-  outputBuffer[6] = (byte)((rightEncoderCount >> 24) & 0xFF);
-  outputBuffer[7] = (byte)((rightEncoderCount >> 16) & 0xFF);
-  outputBuffer[8] = (byte)((rightEncoderCount >> 8) & 0xFF);
-  outputBuffer[9] = (byte)((rightEncoderCount) & 0xFF);
+  outputBuffer[2] = highByte(leftEncoderCount);
+  outputBuffer[3] = lowByte(leftEncoderCount);
+  outputBuffer[4] = highByte(rightEncoderCount);
+  outputBuffer[5] = lowByte(rightEncoderCount);
 
   writeOutputBuffer();
 
