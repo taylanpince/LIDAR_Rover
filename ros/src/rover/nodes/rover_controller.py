@@ -20,6 +20,9 @@ INCOMING_DATA_TYPE_QUATERNION = 102
 INCOMING_DATA_TYPE_GYRO = 103
 INCOMING_DATA_TYPE_ACCELEROMETER = 104
 
+INCOMING_MESSAGE_BEGIN = 24
+INCOMING_MESSAGE_END = 23
+
 SCAN_START_COMMAND = b'S'
 SCAN_STOP_COMMAND = b'X'
 
@@ -27,22 +30,30 @@ AVG_STEPS_PER_SCAN = 3560
 MAX_SCAN_SIZE_CM = 500
 TOTAL_MAP_SCAN_POINTS = 360 * 3
 
-PORT_NAME = "/dev/cu.usbserial-DA011F6D"
+PORT_NAME = "/dev/ttyUSB0"
 
 
 class ArduinoController:
-    def __init__(self, conn, publisher):
+    def __init__(self, conn):
         self.conn = conn
-        self.publisher = publisher
     
-    def read_incoming_data(self):
-        if self.conn.in_waiting < 10:
-            return None
+    def extract_messages(self, payload):
+        messages = []
+        message = []
         
-        payload = list(self.conn.read(size=10))
+        for val in payload:
+            if val == INCOMING_MESSAGE_BEGIN:
+                message = []
+            elif val == INCOMING_MESSAGE_END:
+                if len(message) == 10:
+                    messages.append(message)
+            else:
+                message.append(val)
+        
+        return messages
+    
+    def parse_message(self, payload):
         data_type = payload[0]
-
-        # self.publisher.log_info("{}".format(payload))
 
         if data_type == INCOMING_DATA_TYPE_SCAN:
             pos = int.from_bytes(payload[1:3], byteorder="big")
@@ -89,6 +100,21 @@ class ArduinoController:
         
         return None
     
+    def read_incoming_data(self):
+        if self.conn.in_waiting < 12:
+            return []
+        
+        payload = list(self.conn.read_until(expected=bytes([INCOMING_MESSAGE_END]), size=24))
+        commands = []
+        
+        for message in self.extract_messages(payload):
+            command = self.parse_message(message)
+            
+            if command:
+                commands.append(command)
+        
+        return commands
+    
     def send_button_command(self, command):
         self.conn.write(command)
         self.conn.write(COMMAND_END)
@@ -100,38 +126,67 @@ class ArduinoController:
         self.conn.write(COMMAND_END)
 
 
-def main(args=None):
-    lwheel_publisher = rospy.Publisher('lwheel', Int32, queue_size=10)
-    rwheel_publisher = rospy.Publisher('rwheel', Int32, queue_size=10)
-    
-    rospy.init_node('rover_controller', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
-    
-    serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
-    arduino = ArduinoController(serial_conn, lidar_publisher)
-    
-    left_motor_pos = 0
-    right_motor_pos = 0
-
-    while not rospy.is_shutdown():
-        incoming_payload = arduino.read_incoming_data()
+class RoverController:
+    def __init__(self):
+        self.left_motor_pos = 0
+        self.right_motor_pos = 0
+        self.left_speed = 0
+        self.right_speed = 0
+        self.maxMotorSpeed = 3000
         
-        if incoming_payload:
-            data_type, payload = incoming_payload
-
-            if data_type == INCOMING_DATA_TYPE_MOTOR:
-                left_motor_pos, right_motor_pos = payload
+        self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
+        self.arduino = ArduinoController(serial_conn)
+    
+    def leftMotorCallback(self, speed):
+        self.left_speed = speed
         
-        rospy.loginfo("Wheels: Left %d | Right %d".format(left_motor_pos, right_motor_pos))
+        motor_power = MAX_POWER * math.abs(self.left_speed) / self.max_motor_speed
+        motor_direction = DIRECTION_FORWARDS if self.left_speed >= 0 else DIRECTION_BACKWARDS
+        
+        self.arduino.send_command(MOTOR_LEFT, motor_direction, motor_power)
+        
+    def rightMotorCallback(self, speed):
+        self.right_speed = speed
+        
+        motor_power = MAX_POWER * math.abs(self.right_speed) / self.max_motor_speed
+        motor_direction = DIRECTION_FORWARDS if self.right_speed >= 0 else DIRECTION_BACKWARDS
+        
+        self.arduino.send_command(MOTOR_RIGHT, motor_direction, motor_power)
 
-        lwheel_publisher.publish(left_motor_pos)
-        rwheel_publisher.publish(right_motor_pos)
+    
+    def main():
+        self.maxMotorSpeed = int(rospy.get_param('~max_motor_speed'))
+        
+        lwheel_publisher = rospy.Publisher('~lwheel_ticks', Int32, queue_size=10)
+        rwheel_publisher = rospy.Publisher('~rwheel_ticks', Int32, queue_size=10)
+        
+        rospy.init_node('rover_controller')
+        rate = rospy.Rate(10) # 10hz
+        
+        rospy.Subscriber('~lwheel_desired_rate', Int32, self.leftMotorCallback)
+        rospy.Subscriber('~rwheel_desired_rate', Int32, self.rightMotorCallback)
+        
+        while not rospy.is_shutdown():
+            incoming_commands = self.arduino.read_incoming_data()
+            
+            for command in incoming_commands:
+                data_type, payload = command
 
-        rate.sleep()
+                if data_type == INCOMING_DATA_TYPE_MOTOR:
+                    self.left_motor_pos, self.right_motor_pos = payload
+            
+            #rospy.loginfo("Wheels: Left {:03d} | Right {:03d}".format(left_motor_pos, right_motor_pos))
+
+            lwheel_publisher.publish(self.left_motor_pos)
+            rwheel_publisher.publish(self.right_motor_pos)
+
+            rate.sleep()
 
 
 if __name__ == '__main__':
     try:
-        main()
+        node = RoverController()
+        node.main()
     except rospy.ROSInterruptException:
         pass
+
