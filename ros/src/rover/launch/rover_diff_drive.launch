@@ -2,7 +2,7 @@
 
   <arg name="ticks_per_meter" value="13500" />
   <arg name="wheel_separation" value="0.22" />
-  <arg name="max_motor_speed" value="3000" />
+  <arg name="max_motor_speed" value="4000" />
 
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover.urdf.xml"/>
 
@@ -35,12 +35,12 @@
     <rosparam subst_value="true">
       ticks_per_meter: $(arg ticks_per_meter)
       wheel_separation: $(arg wheel_separation)
-      encoder_min: -2147483648
-      encoder_max: 2147483648
+      encoder_min: -32768
+      encoder_max: 32768
     </rosparam>
   </node>
 
-  <node name="rover_controller" pkg="rover" type="rover_controller"
+  <node name="rover_controller" pkg="rover" type="rover_controller.py"
         output="screen">
     <rosparam subst_value="true">
       max_motor_speed: $(arg max_motor_speed)
