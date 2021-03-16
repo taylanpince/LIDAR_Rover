@@ -18,6 +18,8 @@
     <param name="use_gui" value="False" />
     <param name="rate" value="10.0"/>
   </node>
+  
+  <node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0 0 0 0 0 imu_base imu_link 100" />
 
   <node name="controller" pkg="diff_drive" type="diff_drive_controller"
         output="screen">

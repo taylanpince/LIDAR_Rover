@@ -5,6 +5,8 @@ import serial
 import math
 
 from std_msgs.msg import Int32
+from geometry_msgs.msg import Quaternion, Vector3
+from sensor_msgs.msg import Imu
 
 
 MOTOR_LEFT = b'L'
@@ -133,6 +135,9 @@ class RoverController:
         self.left_speed = 0
         self.right_speed = 0
         self.max_motor_speed = 3000
+        self.last_orientation = None
+        self.last_gyro = None
+        self.last_acceleration = None
         
         self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
         self.arduino = ArduinoController(self.serial_conn)
@@ -152,12 +157,53 @@ class RoverController:
         motor_direction = DIRECTION_FORWARDS if self.right_speed >= 0 else DIRECTION_BACKWARDS
         
         self.arduino.send_command(MOTOR_RIGHT, motor_direction, motor_power)
+        
+    def publish_imu_message(self, publisher):
+        if self.last_orientation is None or self.last_gyro is None or self.last_acceleration is None:
+            return
+        
+        imu_msg = Imu()
+        
+        imu_msg.header.stamp = rospy.Time.now()
+        imu_msg.header.frame_id = "imu_link"
+        
+        gxf, gyf, gzf = self.last_gyro
+        axf, ayf, azf = self.last_acceleration
+        oxf, oyf, ozf, owf = self.last_orientation
+        
+        orientation = Quaternion()
+        angular_velocity = Vector3()
+        linear_acceleration = Vector3()
+        
+        orientation.x = oxf
+        orientation.y = oyf
+        orientation.z = ozf
+        orientation.w = owf
+        
+        angular_velocity.x = gxf
+        angular_velocity.y = gyf
+        angular_velocity.z = gzf
+        
+        linear_acceleration.x = axf
+        linear_acceleration.y = ayf
+        linear_acceleration.z = azf
+        
+        imu_msg.orientation = orientation
+        imu_msg.angular_velocity = angular_velocity
+        imu_msg.linear_acceleration = linear_acceleration
+        
+        publisher.publish(imu_msg)
+        
+        self.last_orientation = None
+        self.last_gyro = None
+        self.last_acceleration = None
 
     def main(self):
         rospy.init_node('rover_controller')
         
         lwheel_publisher = rospy.Publisher('~lwheel_ticks', Int32, queue_size=10)
         rwheel_publisher = rospy.Publisher('~rwheel_ticks', Int32, queue_size=10)
+        imu_publisher = rospy.Publisher('~imu_link', Imu, queue_size=10)
 
         self.max_motor_speed = int(rospy.get_param('~max_motor_speed'))
 
@@ -174,11 +220,19 @@ class RoverController:
 
                 if data_type == INCOMING_DATA_TYPE_MOTOR:
                     self.left_motor_pos, self.right_motor_pos = payload
+                    
+                    lwheel_publisher.publish(self.left_motor_pos)
+                    rwheel_publisher.publish(self.right_motor_pos)
+                elif data_type == INCOMING_DATA_TYPE_QUATERNION:
+                    self.last_orientation = payload
+                elif data_type == INCOMING_DATA_TYPE_GYRO:
+                    self.last_gyro = payload
+                elif data_type == INCOMING_DATA_TYPE_ACCELEROMETER:
+                    self.last_acceleration = payload
             
             #rospy.loginfo("Wheels: Left {:03d} | Right {:03d}".format(left_motor_pos, right_motor_pos))
 
-            lwheel_publisher.publish(self.left_motor_pos)
-            rwheel_publisher.publish(self.right_motor_pos)
+            self.publish_imu_message(imu_publisher)
 
             rate.sleep()
 
