@@ -142,6 +142,9 @@ class RoverController:
         self.last_gyro = None
         self.last_acceleration = None
         self.last_motor_command_time = 0
+        self.ori_cov = 0.0025 # Orientation covariance
+        self.vel_cov = 0.02 # Angular velocity covariance
+        self.acc_cov = 0.04 # Linear acceleration covariance
         
         self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
         self.arduino = ArduinoController(self.serial_conn)
@@ -179,6 +182,16 @@ class RoverController:
         imu_msg.orientation = orientation
         imu_msg.angular_velocity = angular_velocity
         imu_msg.linear_acceleration = linear_acceleration
+        
+        imu_msg.orientation_covariance[0] = self.ori_cov
+        imu_msg.orientation_covariance[4] = self.ori_cov
+        imu_msg.orientation_covariance[8] = self.ori_cov
+        imu_msg.angular_velocity_covariance[0] = self.vel_cov
+        imu_msg.angular_velocity_covariance[4] = self.vel_cov
+        imu_msg.angular_velocity_covariance[8] = self.vel_cov
+        imu_msg.linear_acceleration_covariance[0] = self.acc_cov
+        imu_msg.linear_acceleration_covariance[4] = self.acc_cov
+        imu_msg.linear_acceleration_covariance[8] = self.acc_cov
         
         publisher.publish(imu_msg)
         

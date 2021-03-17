@@ -382,6 +382,7 @@ char activeCommand = 0x00;
 char activeDirection = 0x00;
 char activePayload[5] = {};
 uint8_t payloadIndex = 0;
+long lastMotorCommandTime = 0;
 
 void loop() {
   if (scanRunning) processScan();
@@ -390,6 +391,8 @@ void loop() {
   processMotorPositions();
 
   Serial2.flush();
+
+  long nowTime = millis();
 
   while (Serial2.available()) {
     char value = Serial2.read();
@@ -423,6 +426,8 @@ void loop() {
   
         setMotorDirection(motor, dir);
         setMotorSpeed(motor, power);
+
+        lastMotorCommandTime = nowTime;
       }
 
       payloadIndex = 0;
@@ -440,5 +445,11 @@ void loop() {
       activePayload[payloadIndex - 2] = value;
       payloadIndex++;
     }
+  }
+
+  // Too much time since last command, stop
+  if (nowTime - lastMotorCommandTime > 1000) {
+    setMotorSpeed(MOTOR::LEFT, 0);
+    setMotorSpeed(MOTOR::RIGHT, 0);
   }
 }
