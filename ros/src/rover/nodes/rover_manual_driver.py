@@ -9,6 +9,8 @@ from geometry_msgs.msg import Quaternion, Vector3
 from sensor_msgs.msg import Imu
 
 
+JOYSTICK_MAX = 65535
+
 MOTOR_LEFT = b'L'
 MOTOR_RIGHT = b'R'
 DIRECTION_FORWARDS = b'F'
@@ -31,6 +33,8 @@ SCAN_STOP_COMMAND = b'X'
 AVG_STEPS_PER_SCAN = 3560
 MAX_SCAN_SIZE_CM = 500
 TOTAL_MAP_SCAN_POINTS = 360 * 3
+
+SERIAL_BUFFER_TIME = 500
 
 PORT_NAME = "/dev/ttyUSB0"
 
@@ -134,29 +138,13 @@ class RoverController:
         self.right_motor_pos = 0
         self.left_speed = 0
         self.right_speed = 0
-        self.max_motor_speed = 3000
         self.last_orientation = None
         self.last_gyro = None
         self.last_acceleration = None
+        self.last_motor_command_time = 0
         
         self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
         self.arduino = ArduinoController(self.serial_conn)
-    
-    def leftMotorCallback(self, speed):
-        self.left_speed = speed.data
-        
-        motor_power = int(MAX_POWER * abs(self.left_speed) / self.max_motor_speed)
-        motor_direction = DIRECTION_FORWARDS if self.left_speed >= 0 else DIRECTION_BACKWARDS
-        
-        self.arduino.send_command(MOTOR_LEFT, motor_direction, motor_power)
-        
-    def rightMotorCallback(self, speed):
-        self.right_speed = speed.data
-        
-        motor_power = int(MAX_POWER * abs(self.right_speed) / self.max_motor_speed)
-        motor_direction = DIRECTION_FORWARDS if self.right_speed >= 0 else DIRECTION_BACKWARDS
-        
-        self.arduino.send_command(MOTOR_RIGHT, motor_direction, motor_power)
         
     def publish_imu_message(self, publisher):
         if self.last_orientation is None or self.last_gyro is None or self.last_acceleration is None:
@@ -197,6 +185,29 @@ class RoverController:
         self.last_orientation = None
         self.last_gyro = None
         self.last_acceleration = None
+    
+    def leftMotorCallback(self, speed):
+        self.left_speed = speed.data
+        
+    def rightMotorCallback(self, speed):
+        self.right_speed = speed.data
+
+    def send_motor_command(self, motor, speed):
+        motor_power = abs(speed)
+        motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS
+
+        self.arduino.send_command(motor, motor_direction, motor_power)
+
+    def send_motor_commands(self):
+        now = time.time_ns() // 1_000_000
+        
+        if now - self.last_motor_command_time < 250:
+            return
+        
+        self.last_motor_command_time = now
+        
+        self.send_motor_command(MOTOR_LEFT, self.left_speed)
+        self.send_motor_command(MOTOR_RIGHT, self.right_speed)
 
     def main(self):
         rospy.init_node('rover_controller')
@@ -204,13 +215,9 @@ class RoverController:
         lwheel_publisher = rospy.Publisher('~lwheel_ticks', Int32, queue_size=10)
         rwheel_publisher = rospy.Publisher('~rwheel_ticks', Int32, queue_size=10)
         imu_publisher = rospy.Publisher('~imu_link', Imu, queue_size=10)
-
-        self.max_motor_speed = int(rospy.get_param('~max_motor_speed'))
-
-        rate = rospy.Rate(10) # 10hz
         
-        rospy.Subscriber('~lwheel_desired_rate', Int32, self.leftMotorCallback)
-        rospy.Subscriber('~rwheel_desired_rate', Int32, self.rightMotorCallback)
+        rospy.Subscriber('~lwheel_speed', Int32, self.leftMotorCallback)
+        rospy.Subscriber('~rwheel_speed', Int32, self.rightMotorCallback)
         
         while not rospy.is_shutdown():
             incoming_commands = self.arduino.read_incoming_data()
@@ -230,11 +237,8 @@ class RoverController:
                 elif data_type == INCOMING_DATA_TYPE_ACCELEROMETER:
                     self.last_acceleration = payload
             
-            #rospy.loginfo("Wheels: Left {:03d} | Right {:03d}".format(left_motor_pos, right_motor_pos))
-
             self.publish_imu_message(imu_publisher)
-
-            rate.sleep()
+            self.send_motor_commands()
 
 
 if __name__ == '__main__':

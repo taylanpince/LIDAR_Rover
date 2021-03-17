@@ -17,6 +17,8 @@ include_directories(
 catkin_install_python(
     PROGRAMS
         nodes/rover_controller.py
+        nodes/rover_manual_driver.py
+        nodes/xbox_controller.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

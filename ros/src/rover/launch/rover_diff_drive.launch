@@ -18,6 +18,8 @@
     <param name="use_gui" value="False" />
     <param name="rate" value="10.0"/>
   </node>
+  
+  <node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0 0 0 0 0 imu_base imu_link 100" />
 
   <node name="controller" pkg="diff_drive" type="diff_drive_controller"
         output="screen">
@@ -37,6 +39,7 @@
       wheel_separation: $(arg wheel_separation)
       encoder_min: -32768
       encoder_max: 32768
+      publish_tf: false
     </rosparam>
   </node>
 
@@ -65,6 +68,10 @@
     <param name="~angular_tolerance" value="0.04" />
     <param name="~forwardMovementOnly" value="false" />
     <remap from="cmd_vel" to="/robot/cmd_vel" />
+  </node>
+  
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
+    <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
   </node>
 
   <node name="rviz" pkg="rviz" type="rviz"

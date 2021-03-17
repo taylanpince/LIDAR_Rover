@@ -1,0 +1,49 @@
+<launch>
+
+  <arg name="ticks_per_meter" value="13500" />
+  <arg name="wheel_separation" value="0.22" />
+
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover.urdf.xml"/>
+
+  <!-- Publish the robot state -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <param name="publish_frequency" value="10.0"/>
+  </node>
+
+  <!-- Provide simulated control of the robot joint angles -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="False" />
+    <param name="rate" value="10.0"/>
+  </node>
+  
+  <node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0 0 0 0 0 imu_base imu_link 100" />
+  
+  <node name="odom_publisher" pkg="diff_drive" type="diff_drive_odometry" output="screen">
+    <rosparam subst_value="true">
+      ticks_per_meter: $(arg ticks_per_meter)
+      wheel_separation: $(arg wheel_separation)
+      encoder_min: -32768
+      encoder_max: 32768
+      publish_tf: false
+    </rosparam>
+  </node>
+
+  <node name="xbox_controller" pkg="rover" type="xbox_controller.py" output="screen">
+    <remap from="~lwheel_speed" to="lwheel_speed" />
+    <remap from="~rwheel_speed" to="rwheel_speed" />
+  </node>
+
+  <node name="rover_manual_driver" pkg="rover" type="rover_manual_driver.py" output="screen">
+    <remap from="~lwheel_ticks" to="lwheel_ticks" />
+    <remap from="~rwheel_ticks" to="rwheel_ticks" />
+    <remap from="~lwheel_speed" to="lwheel_speed" />
+    <remap from="~rwheel_speed" to="rwheel_speed" />
+  </node>
+  
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
+    <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find diff_drive)/config/view.rviz" />
+
+</launch>
