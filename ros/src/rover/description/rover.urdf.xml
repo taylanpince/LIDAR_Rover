@@ -21,7 +21,6 @@
 
     <!-- Robot Base -->
     <link name="base_link">
-        <xacro:box_inertia m="10" w="${base_length}" h="${base_width}" d="0.01"/>
         <visual>
             <geometry>
                 <box size="${base_length} ${base_width} ${base_height}"/>
