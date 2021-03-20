@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="ticks_per_meter" value="13500" />
+  <arg name="ticks_per_meter" value="8484" />
   <arg name="wheel_separation" value="0.22" />
 
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover.urdf.xml"/>
