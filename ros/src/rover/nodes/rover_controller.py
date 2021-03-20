@@ -9,26 +9,11 @@ from geometry_msgs.msg import Quaternion, Vector3
 from sensor_msgs.msg import Imu
 
 from rover.arduino import ArduinoController
+from rover.commands import *
 
 
-MOTOR_LEFT = b'L'
-MOTOR_RIGHT = b'R'
-DIRECTION_FORWARDS = b'F'
-DIRECTION_BACKWARDS = b'B'
-COMMAND_END = b'.'
 MAX_POWER = 255
-
-INCOMING_DATA_TYPE_SCAN = 100
-INCOMING_DATA_TYPE_MOTOR = 101
-INCOMING_DATA_TYPE_QUATERNION = 102
-INCOMING_DATA_TYPE_GYRO = 103
-INCOMING_DATA_TYPE_ACCELEROMETER = 104
-
-INCOMING_MESSAGE_BEGIN = 24
-INCOMING_MESSAGE_END = 23
-
-SCAN_START_COMMAND = b'S'
-SCAN_STOP_COMMAND = b'X'
+MIN_POWER = 125
 
 AVG_STEPS_PER_SCAN = 3560
 MAX_SCAN_SIZE_CM = 500
@@ -58,24 +43,28 @@ class RoverController:
     def leftMotorCallback(self, speed):
         self.left_speed = speed.data
         
-        motor_power = int(MAX_POWER * abs(self.left_speed) / self.max_motor_speed)
-        motor_direction = DIRECTION_FORWARDS if self.left_speed >= 0 else DIRECTION_BACKWARDS
-        
-        self.arduino.send_command(MOTOR_LEFT, motor_direction, motor_power)
-        
     def rightMotorCallback(self, speed):
         self.right_speed = speed.data
-        
-        motor_power = int(MAX_POWER * abs(self.right_speed) / self.max_motor_speed)
-        motor_direction = DIRECTION_FORWARDS if self.right_speed >= 0 else DIRECTION_BACKWARDS
-        
-        self.arduino.send_command(MOTOR_RIGHT, motor_direction, motor_power)
 
     def send_motor_command(self, motor, speed):
-        motor_power = abs(speed)
+        motor_power = int((MAX_POWER - MIN_POWER) * abs(speed) / self.max_motor_speed)
         motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS
+        
+        if motor_power > 10:
+            motor_power = MIN_POWER + motor_power
 
         self.arduino.send_command(motor, motor_direction, motor_power)
+
+    def send_motor_commands(self):
+        now = time.time_ns() // 1_000_000
+        
+        if now - self.last_motor_command_time < 250:
+            return
+        
+        self.last_motor_command_time = now
+        
+        self.send_motor_command(MOTOR_LEFT, self.left_speed)
+        self.send_motor_command(MOTOR_RIGHT, self.right_speed)
         
     def publish_imu_message(self, publisher):
         if self.last_orientation is None or self.last_gyro is None or self.last_acceleration is None:
