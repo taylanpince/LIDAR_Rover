@@ -1,12 +1,14 @@
 <launch>
 
-  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover.urdf.xml"/>  
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover_reversed.urdf.xml"/>  
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="True" />
+  </node>
 
-  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find diff_drive)/config/view.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(find rover)/config/visualization.rviz"/>
   
 </launch>
 

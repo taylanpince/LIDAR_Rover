@@ -36,6 +36,7 @@ class RoverController:
         self.ori_cov = 0.0025 # Orientation covariance
         self.vel_cov = 0.02 # Angular velocity covariance
         self.acc_cov = 0.04 # Linear acceleration covariance
+        self.reverse_motor_direction = False
         
         self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
         self.arduino = ArduinoController(self.serial_conn)
@@ -98,7 +99,11 @@ class RoverController:
 
     def send_motor_command(self, motor, speed):
         motor_power = abs(speed)
-        motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS
+        
+        if self.reverse_motor_direction:
+            motor_direction = DIRECTION_BACKWARDS if speed >= 0 else DIRECTION_FORWARDS
+        else:
+            motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS
 
         self.arduino.send_command(motor, motor_direction, motor_power)
 
@@ -119,6 +124,8 @@ class RoverController:
         lwheel_publisher = rospy.Publisher('~lwheel_ticks', Int32, queue_size=10)
         rwheel_publisher = rospy.Publisher('~rwheel_ticks', Int32, queue_size=10)
         imu_publisher = rospy.Publisher('~imu_link', Imu, queue_size=10)
+        
+        self.reverse_motor_direction = rospy.get_param('~reverse_motor_direction')
         
         rospy.Subscriber('~lwheel_speed', Int32, self.leftMotorCallback)
         rospy.Subscriber('~rwheel_speed', Int32, self.rightMotorCallback)

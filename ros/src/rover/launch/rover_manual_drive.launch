@@ -3,7 +3,7 @@
   <arg name="ticks_per_meter" value="8484" />
   <arg name="wheel_separation" value="0.22" />
 
-  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover.urdf.xml"/>
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover_reversed.urdf.xml"/>
 
   <!-- Publish the robot state -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
@@ -34,6 +34,7 @@
   </node>
 
   <node name="rover_manual_driver" pkg="rover" type="rover_manual_driver.py" output="screen">
+    <param name="~reverse_motor_direction" value="true" />
     <remap from="~lwheel_ticks" to="lwheel_ticks" />
     <remap from="~rwheel_ticks" to="rwheel_ticks" />
     <remap from="~lwheel_speed" to="lwheel_speed" />
@@ -44,6 +45,6 @@
     <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
   </node>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find diff_drive)/config/view.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/driver.rviz" />
 
 </launch>
