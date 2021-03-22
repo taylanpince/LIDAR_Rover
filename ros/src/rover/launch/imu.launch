@@ -15,7 +15,7 @@
     <param name="use_gui" value="False" />
     <param name="rate" value="10.0"/>
   </node>
-  
+
   <node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0 0 0 0 0 imu_base imu_link 100" />
   
   <node name="odom_publisher" pkg="diff_drive" type="diff_drive_odometry" output="screen">
@@ -24,13 +24,8 @@
       wheel_separation: $(arg wheel_separation)
       encoder_min: -32768
       encoder_max: 32768
-      publish_tf: false
+      publish_tf: true
     </rosparam>
-  </node>
-
-  <node name="xbox_controller" pkg="rover" type="xbox_controller.py" output="screen">
-    <remap from="~lwheel_speed" to="lwheel_speed" />
-    <remap from="~rwheel_speed" to="rwheel_speed" />
   </node>
 
   <node name="rover_manual_driver" pkg="rover" type="rover_manual_driver.py" output="screen">
@@ -41,17 +36,29 @@
     <remap from="~rwheel_speed" to="rwheel_speed" />
     <remap from="~imu_link" to="raw" />
   </node>
-  <!--
+  
   <node pkg="imu_calib" type="apply_calib" name="apply_calib" output="screen" respawn="false">
     <param name="calib_file" value="$(find rover)/config/imu_calib.yaml" />
     <param name="calibrate_gyros" value="true" />
-    <remap from="corrected" to="imu_link" />
+    <remap from="corrected" to="imu/data_raw" />
   </node>
-  -->
+
+  <!-- Filter and fuse raw imu data -->
+  <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_madgwick" output="screen" respawn="false">
+    <param name="fixed_frame" value="odom" />
+    <param name="use_mag" value="false" />
+    <param name="publish_tf" value="true" />
+    <param name="use_magnetic_field_msg" value="false" />
+    <param name="world_frame" value="enu" />
+    <!--<param name="remove_gravity_vector" value="true" />-->
+    <!--<param name="orientation_stddev" value="0.05" />-->
+    <remap from="imu/data" to="imu_link" />
+  </node>
+  <!--
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
     <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
   </node>
-
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/driver.rviz" />
+  -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/imu.rviz" />
 
 </launch>

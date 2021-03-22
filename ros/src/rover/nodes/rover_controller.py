@@ -51,6 +51,7 @@ class RoverController:
         motor_power = int((MAX_POWER - MIN_POWER) * abs(speed) / self.max_motor_speed)
         
         if self.reverse_motor_direction:
+            motor = MOTOR_LEFT if motor == MOTOR_RIGHT else MOTOR_RIGHT
             motor_direction = DIRECTION_BACKWARDS if speed >= 0 else DIRECTION_FORWARDS
         else:
             motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS

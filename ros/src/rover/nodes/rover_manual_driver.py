@@ -71,13 +71,13 @@ class RoverController:
         linear_acceleration.y = ayf
         linear_acceleration.z = azf
         
-        imu_msg.orientation = orientation
+        #imu_msg.orientation = orientation
         imu_msg.angular_velocity = angular_velocity
         imu_msg.linear_acceleration = linear_acceleration
         
-        imu_msg.orientation_covariance[0] = self.ori_cov
-        imu_msg.orientation_covariance[4] = self.ori_cov
-        imu_msg.orientation_covariance[8] = self.ori_cov
+        #imu_msg.orientation_covariance[0] = self.ori_cov
+        #imu_msg.orientation_covariance[4] = self.ori_cov
+        #imu_msg.orientation_covariance[8] = self.ori_cov
         imu_msg.angular_velocity_covariance[0] = self.vel_cov
         imu_msg.angular_velocity_covariance[4] = self.vel_cov
         imu_msg.angular_velocity_covariance[8] = self.vel_cov
@@ -101,6 +101,7 @@ class RoverController:
         motor_power = abs(speed)
         
         if self.reverse_motor_direction:
+            motor = MOTOR_LEFT if motor == MOTOR_RIGHT else MOTOR_RIGHT
             motor_direction = DIRECTION_BACKWARDS if speed >= 0 else DIRECTION_FORWARDS
         else:
             motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS

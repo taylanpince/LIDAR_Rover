@@ -28,30 +28,15 @@
     </rosparam>
   </node>
 
-  <node name="xbox_controller" pkg="rover" type="xbox_controller.py" output="screen">
-    <remap from="~lwheel_speed" to="lwheel_speed" />
-    <remap from="~rwheel_speed" to="rwheel_speed" />
-  </node>
-
   <node name="rover_manual_driver" pkg="rover" type="rover_manual_driver.py" output="screen">
     <param name="~reverse_motor_direction" value="true" />
     <remap from="~lwheel_ticks" to="lwheel_ticks" />
     <remap from="~rwheel_ticks" to="rwheel_ticks" />
     <remap from="~lwheel_speed" to="lwheel_speed" />
     <remap from="~rwheel_speed" to="rwheel_speed" />
-    <remap from="~imu_link" to="raw" />
-  </node>
-  <!--
-  <node pkg="imu_calib" type="apply_calib" name="apply_calib" output="screen" respawn="false">
-    <param name="calib_file" value="$(find rover)/config/imu_calib.yaml" />
-    <param name="calibrate_gyros" value="true" />
-    <remap from="corrected" to="imu_link" />
-  </node>
-  -->
-  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
-    <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
+    <remap from="~imu_link" to="imu" />
   </node>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/driver.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/imu.rviz" />
 
 </launch>

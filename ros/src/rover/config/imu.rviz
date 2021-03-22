@@ -7,7 +7,8 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1
-        - /Axes1
+        - /RobotModel1
+        - /Imu1
       Splitter Ratio: 0.5
     Tree Height: 477
   - Class: rviz/Selection
@@ -66,14 +67,6 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Alpha: 1
-      Class: rviz/Axes
-      Enabled: true
-      Length: 0.20000000298023224
-      Name: Axes
-      Radius: 0.029999999329447746
-      Reference Frame: base_link
-      Value: true
-    - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -106,16 +99,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        left_front_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_front_wheel_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         scan_base:
           Alpha: 1
           Show Axes: false
@@ -127,11 +110,35 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Acceleration properties:
+        Acc. vector alpha: 1
+        Acc. vector color: 255; 0; 0
+        Acc. vector scale: 1
+        Derotate acceleration: true
+        Enable acceleration: false
+      Axes properties:
+        Axes scale: 1
+        Enable axes: true
+      Box properties:
+        Box alpha: 1
+        Box color: 255; 0; 0
+        Enable box: false
+        x_scale: 1
+        y_scale: 1
+        z_scale: 1
+      Class: rviz_imu_plugin/Imu
+      Enabled: true
+      Name: Imu
+      Queue Size: 10
+      Topic: /imu_link
+      Unreliable: false
+      Value: true
+      fixed_frame_orientation: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: odom
+    Fixed Frame: base_link
     Frame Rate: 30
   Name: root
   Tools:
@@ -155,7 +162,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 8.606748580932617
+      Distance: 2.368217706680298
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
