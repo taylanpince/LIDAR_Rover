@@ -17,7 +17,18 @@
   </node>
   
   <node pkg="tf" type="static_transform_publisher" name="imu_link_broadcaster" args="0 0 0 0 0 0 imu_base imu_link 100" />
-  
+  <!--
+  <node name="set_initialpose" pkg="set_initialpose" type="set_initialpose" output="screen">
+
+    <param name="position_x" value="0.0" />
+    <param name="position_y" value="0.0" />
+    <param name="orientation_th" value="-1.57" />
+    <param name="covariance_x" value="0.4" />
+    <param name="covariance_y" value="0.4" />
+    <param name="covariance_th" value="0.2" />
+
+  </node>
+  -->
   <node name="odom_publisher" pkg="diff_drive" type="diff_drive_odometry" output="screen">
     <rosparam subst_value="true">
       ticks_per_meter: $(arg ticks_per_meter)
@@ -39,7 +50,7 @@
     <remap from="~rwheel_ticks" to="rwheel_ticks" />
     <remap from="~lwheel_speed" to="lwheel_speed" />
     <remap from="~rwheel_speed" to="rwheel_speed" />
-    <remap from="~imu_link" to="raw" />
+    <remap from="~imu_link" to="imu_link" />
   </node>
   <!--
   <node pkg="imu_calib" type="apply_calib" name="apply_calib" output="screen" respawn="false">

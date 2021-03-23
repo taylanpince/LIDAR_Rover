@@ -71,13 +71,13 @@ class RoverController:
         linear_acceleration.y = ayf
         linear_acceleration.z = azf
         
-        #imu_msg.orientation = orientation
+        imu_msg.orientation = orientation
         imu_msg.angular_velocity = angular_velocity
         imu_msg.linear_acceleration = linear_acceleration
         
-        #imu_msg.orientation_covariance[0] = self.ori_cov
-        #imu_msg.orientation_covariance[4] = self.ori_cov
-        #imu_msg.orientation_covariance[8] = self.ori_cov
+        imu_msg.orientation_covariance[0] = self.ori_cov
+        imu_msg.orientation_covariance[4] = self.ori_cov
+        imu_msg.orientation_covariance[8] = self.ori_cov
         imu_msg.angular_velocity_covariance[0] = self.vel_cov
         imu_msg.angular_velocity_covariance[4] = self.vel_cov
         imu_msg.angular_velocity_covariance[8] = self.vel_cov

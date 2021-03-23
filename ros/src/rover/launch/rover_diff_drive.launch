@@ -7,8 +7,7 @@
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find rover)/description/rover_reversed.urdf.xml"/>
 
   <!-- Publish the robot state -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher"
-        type="robot_state_publisher">
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <param name="publish_frequency" value="10.0"/>
   </node>
 
@@ -52,6 +51,7 @@
     <remap from="~rwheel_desired_rate" to="rwheel_desired_rate" />
     <remap from="~lwheel_ticks" to="lwheel_ticks" />
     <remap from="~rwheel_ticks" to="rwheel_ticks" />
+    <remap from="~imu_link" to="imu_link" />
   </node>
 
   <node name="diff_drive_go_to_goal" pkg="diff_drive" type="diff_drive_go_to_goal" output="screen">
@@ -59,10 +59,10 @@
     <param name="~kP" value="0.5" />
     <param name="~kA" value="1.0" />
     <param name="~kB" value="-0.8" />
-    <param name="~max_linear_speed" value="0.2" />
-    <param name="~min_linear_speed" value="0.05" />
+    <param name="~max_linear_speed" value="0.25" />
+    <param name="~min_linear_speed" value="0.1" />
     <param name="~max_angular_speed" value="0.7" />
-    <param name="~min_angular_speed" value="0.1" />
+    <param name="~min_angular_speed" value="0.2" />
     <param name="~linear_tolerance" value="0.1" />
     <param name="~angular_tolerance" value="0.087" />
     <param name="~forwardMovementOnly" value="true" />

@@ -9,3 +9,4 @@ ros/devel
 ros/src/diff_drive
 ros/src/imu_calib
 __pycache__
+ros/src/set_initialpose
