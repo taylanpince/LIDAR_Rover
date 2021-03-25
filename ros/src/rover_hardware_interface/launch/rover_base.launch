@@ -1,0 +1,16 @@
+<launch>
+	<!-- Load the URDF model of Rover into the ROS Parameter Server -->
+    <param name="rover/robot_description" command="$(find xacro)/xacro '$(find rover)/description/rover_reversed.urdf.xml'"/>
+
+    <!-- Run the rover_base -->
+    <!-- This will create the Rover hardware interface and instantiate a new controller manager with it -->
+    <node name="rover_base" pkg="rover_hardware_controller" type="rover_base" ns="rover" output="screen"/>
+
+    <!-- Load controller config to the parameter server -->
+    <rosparam command="load" file="$(find rover_hardware_controller)/config/rover_control.yaml"/>
+
+    <!-- Load the controllers -->
+    <!-- This will use the controller manager that got started inside the rover_base node -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" ns="rover" args="joint_state_controller mobile_base_controller"/>
+</launch>

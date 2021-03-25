@@ -1,0 +1,52 @@
+<launch>
+
+  <param name="robot_description" 
+      command="$(find xacro)/xacro --inorder $(find rover)/description/rover_reversed.urdf.xml"/>
+
+  <!-- Publish the robot state -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+    <param name="publish_frequency" value="10.0"/>
+  </node>
+
+  <!-- Provide simulated control of the robot joint angles -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher"
+        type="joint_state_publisher">
+    <param name="use_gui" value="False" />
+    <param name="rate" value="10.0"/>
+  </node>
+  
+  <node pkg="tf" 
+      type="static_transform_publisher" 
+      name="imu_link_broadcaster" 
+      args="0 0 0 0 0 0 imu_base imu_link 100" />
+  
+  <node name="rover_base" pkg="rover_hardware_controller" type="rover_base" ns="rover" output="screen"/>
+
+  <!-- Load controller config to the parameter server -->
+  <rosparam command="load" file="$(find rover)/config/rover_control.yaml"/>
+
+  <!-- Load the controllers -->
+  <!-- This will use the controller manager that got started inside the rover_base node -->
+  <node name="controller_spawner" 
+      pkg="controller_manager" 
+      type="spawner" 
+      respawn="false" 
+      output="screen" 
+      ns="rover" 
+      args="joint_state_controller mobile_base_controller"/>
+
+  <node name="rover_controller" pkg="rover" type="rover_diff_drive_controller.py" ns="rover" output="screen">
+    <remap from="~left_encoder_ticks" to="left_encoder_ticks" />
+    <remap from="~right_encoder_ticks" to="right_encoder_ticks" />
+    <remap from="~motor_left" to="motor_left" />
+    <remap from="~motor_right" to="motor_right" />
+    <remap from="~imu_link" to="imu_link" />
+  </node>
+  
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
+    <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/driver.rviz" />
+
+</launch>
