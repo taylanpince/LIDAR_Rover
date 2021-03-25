@@ -4,10 +4,10 @@
 
     <!-- Run the rover_base -->
     <!-- This will create the Rover hardware interface and instantiate a new controller manager with it -->
-    <node name="rover_base" pkg="rover_hardware_controller" type="rover_base" ns="rover" output="screen"/>
+    <node name="rover_hardware_interface" pkg="rover_hardware_interface" type="rover_hardware_interface" ns="rover" output="screen"/>
 
     <!-- Load controller config to the parameter server -->
-    <rosparam command="load" file="$(find rover_hardware_controller)/config/rover_control.yaml"/>
+    <rosparam command="load" file="$(find rover_hardware_interface)/config/control.yaml"/>
 
     <!-- Load the controllers -->
     <!-- This will use the controller manager that got started inside the rover_base node -->

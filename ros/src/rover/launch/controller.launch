@@ -20,7 +20,7 @@
       name="imu_link_broadcaster" 
       args="0 0 0 0 0 0 imu_base imu_link 100" />
   
-  <node name="rover_base" pkg="rover_hardware_controller" type="rover_base" ns="rover" output="screen"/>
+  <node name="rover_hardware_interface" pkg="rover_hardware_interface" type="rover_hardware_interface" ns="rover" output="screen"/>
 
   <!-- Load controller config to the parameter server -->
   <rosparam command="load" file="$(find rover)/config/rover_control.yaml"/>

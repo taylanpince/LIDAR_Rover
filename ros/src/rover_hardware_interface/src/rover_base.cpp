@@ -7,7 +7,7 @@ int main(int argc, char **argv)
     // Initialize the ROS node
     ros::init(argc, argv, "rover_hw_interface");
     ros::NodeHandle nh;
-    
+    ROS_INFO("Initializing Rover Base ...");
     // Create an instance of your robot so that this instance knows about all 
     // the resources that are available.
     rover_base::RoverHWInterface roverBot(nh);

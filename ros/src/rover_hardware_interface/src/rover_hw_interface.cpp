@@ -96,7 +96,7 @@ namespace rover_base
         // with this robot's hardware_interface::RobotHW.
         registerInterface(&velocity_joint_interface_);
 
-        ROS_INFO("... Done Initializing DiffBot Hardware Interface");
+        ROS_INFO("... Done Initializing Rover Hardware Interface");
         return true;
     }
 
