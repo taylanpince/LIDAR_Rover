@@ -95,7 +95,7 @@ find_package(Boost REQUIRED COMPONENTS system thread)
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
-  config/Parameters.cfg
+  cfg/Parameters.cfg
 )
 
 ###################################
@@ -126,7 +126,7 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}
+add_library(rover_hw_interface
   src/rover_hw_interface.cpp
   src/pid.cpp
 )
@@ -152,14 +152,17 @@ add_executable(${PROJECT_NAME} src/rover_base.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(diffbot_hardware_interface
+target_link_libraries(rover_hw_interface
   ${catkin_LIBRARIES}
 )
 
+
 target_link_libraries(${PROJECT_NAME}
-  diffbot_hardware_interface
+  rover_hw_interface
   ${catkin_LIBRARIES}
 )
+
+add_dependencies(rover_hw_interface ${PROJECT_NAME}_gencfg)
 
 #############
 ## Install ##

@@ -53,7 +53,7 @@ namespace rover_base
     bool RoverHWInterface::init(ros::NodeHandle &root_nh, ros::NodeHandle &robot_hw_nh)
     {
         ROS_INFO("Initializing Rover Hardware Interface ...");
-        num_joints_ = joint_names_.size();
+        num_joints_ = 2;
         ROS_INFO("Number of joints: %d", (int)num_joints_);
         std::array<std::string, NUM_JOINTS> motor_names = {"left_motor", "right_motor"};
         for (unsigned int i = 0; i < num_joints_; i++)

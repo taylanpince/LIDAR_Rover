@@ -113,12 +113,12 @@ namespace rover_base
          */
         void updateDynamicReconfig();
         void updateDynamicReconfig(Gains gains_config);
-        void updateDynamicReconfig(rover_base::ParametersConfig config);
+        void updateDynamicReconfig(rover_hardware_interface::ParametersConfig config);
 
         /**
          * \brief Update the PID parameters from dynamics reconfigure
          */
-        void dynamicReconfigCallback(rover_base::ParametersConfig &config, uint32_t /*level*/);
+        void dynamicReconfigCallback(rover_hardware_interface::ParametersConfig &config, uint32_t /*level*/);
 
     private:
         double f_;
@@ -128,7 +128,7 @@ namespace rover_base
 
         // Dynamic reconfigure
         bool dynamic_reconfig_initialized_;
-        typedef dynamic_reconfigure::Server<rover_base::ParametersConfig> DynamicReconfigServer;
+        typedef dynamic_reconfigure::Server<rover_hardware_interface::ParametersConfig> DynamicReconfigServer;
         boost::shared_ptr<DynamicReconfigServer> param_reconfig_server_;
         DynamicReconfigServer::CallbackType param_reconfig_callback_;
 

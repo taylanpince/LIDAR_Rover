@@ -133,7 +133,7 @@ namespace rover_base
             return;
 
         // Get starting values
-        rover_base::ParametersConfig config;
+        rover_hardware_interface::ParametersConfig config;
         config.f = f_;
 
         // Get starting values
@@ -142,7 +142,7 @@ namespace rover_base
         updateDynamicReconfig(config);
     }
 
-    void PID::updateDynamicReconfig(rover_base::ParametersConfig config)
+    void PID::updateDynamicReconfig(rover_hardware_interface::ParametersConfig config)
     {
         // Make sure dynamic reconfigure is initialized
         if(!dynamic_reconfig_initialized_)
@@ -154,7 +154,7 @@ namespace rover_base
         param_reconfig_mutex_.unlock();
     }
 
-    void PID::dynamicReconfigCallback(rover_base::ParametersConfig &config, uint32_t /*level*/)
+    void PID::dynamicReconfigCallback(rover_hardware_interface::ParametersConfig &config, uint32_t /*level*/)
     {
         ROS_DEBUG_STREAM_NAMED("pid","Dynamics reconfigure callback recieved.");
 
