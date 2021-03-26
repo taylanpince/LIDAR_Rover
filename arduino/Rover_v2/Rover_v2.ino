@@ -53,6 +53,9 @@ long lastMotorPosition = 0;
 long lastMPUMessageTime = 0;
 bool scanRunning = false;
 
+const int IMU_PUBLISH_RATE = 1000 / 10; // 10Hz
+const int MOTOR_PUBLISH_RATE = 1000 / 10; // 10Hz
+
 enum MOTOR {
   LEFT,
   RIGHT,
@@ -274,7 +277,7 @@ void processMPU() {
     // (this lets us immediately read more without waiting for an interrupt)
     mpuFIFOCount -= mpuPacketSize;
 
-    if (millis() - lastMPUMessageTime < 250) {
+    if (millis() - lastMPUMessageTime < IMU_PUBLISH_RATE) {
       return;
     }
     
@@ -360,7 +363,7 @@ uint16_t rightEncoderCount = 0;
 long lastMotorProcessingTime = 0;
 
 void processMotorPositions() {
-  if (millis() - lastMotorProcessingTime < 500) {
+  if (millis() - lastMotorProcessingTime < MOTOR_PUBLISH_RATE) {
     return;
   }
 
