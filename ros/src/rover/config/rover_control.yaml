@@ -1,21 +1,12 @@
 rover:
   # Settings for ros_control hardware interface
   hardware_interface:
-     encoder_ticks_per_rev: 542.0
+     encoder_ticks_per_rev: 2660.0
           
   # Publish all joint states -----------------------------------
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-    extra_joints:
-      - name: rear_caster_rotation_joint
-        position: 0.01
-        velocity: 0.0
-        effort: 0.0
-      - name: rear_caster_wheel_joint
-        position: 0.01
-        velocity: 0.0
-        effort: 0.0
 
   mobile_base_controller:
     type: diff_drive_controller/DiffDriveController
@@ -23,6 +14,8 @@ rover:
 
     left_wheel: 'left_wheel_joint'
     right_wheel: 'right_wheel_joint'
+    
+    enable_odom_tf: false
 
     # Wheel separation and diameter. These are both optional.
     # diff_drive_controller will attempt to read either one or both from the

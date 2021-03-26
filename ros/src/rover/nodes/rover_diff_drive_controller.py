@@ -54,7 +54,10 @@ class RoverController:
         else:
             motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS
         
-        motor_power = MIN_POWER + abs(speed)
+        if abs(speed) > 10:
+            motor_power = MIN_POWER + abs(speed)
+        else:
+            motor_power = 0
 
         self.arduino.send_command(motor, motor_direction, motor_power)
 

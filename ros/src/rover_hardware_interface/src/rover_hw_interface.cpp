@@ -28,7 +28,7 @@ namespace rover_base
         nh_.param<std::string>("mobile_base_controller/right_wheel", right_joint_name_, "right_wheel_joint");
         nh_.param<double>("mobile_base_controller/wheel_radius", wheel_radius_, 0.05);
         nh_.param<double>("mobile_base_controller/linear/x/max_velocity", max_velocity_, 0.2);
-        nh_.param<double>("encoder_ticks_per_rev", encoder_ticks_per_rev_, 542.0);
+        nh_.param<double>("encoder_ticks_per_rev", encoder_ticks_per_rev_, 2660.0);
 
         joint_names_[0] = left_joint_name_;
         joint_names_[1] = right_joint_name_;
@@ -84,7 +84,7 @@ namespace rover_base
             ROS_INFO_STREAM("pid namespace: " << pid_namespace);
             ros::NodeHandle nh(root_nh, pid_namespace);
             // TODO implement builder pattern to initialize values otherwise it is hard to see which parameter is what.
-            pids_[i].init(nh, 0.8, 0.35, 0.5, 0.01, 3.5, -3.5, false, max_velocity_, -max_velocity_);
+            pids_[i].init(nh, 1.0, 0.0, 0.0, 0.0, 3.5, -3.5, false, max_velocity_, -max_velocity_);
             pids_[i].setOutputLimits(-max_velocity_, max_velocity_);
         }
 
@@ -119,6 +119,8 @@ namespace rover_base
             joint_velocities_[i] = wheel_angle_deltas[i] / period.toSec();
             joint_efforts_[i] = 0.0; // unused with diff_drive_controller
         }
+        
+        /*
         const int width = 10;
         const char sep = ' ';
         std::stringstream ss;
@@ -127,6 +129,7 @@ namespace rover_base
         ss << std::left << std::setw(width) << std::setfill(sep) << "j1:" << std::left << std::setw(width) << std::setfill(sep) << encoder_ticks_[1] << std::left << std::setw(width) << std::setfill(sep) << wheel_angles[1] << std::left << std::setw(width) << std::setfill(sep) << wheel_angle_deltas[1] << std::setw(width) << std::setfill(sep) << joint_velocities_[1];
         ROS_INFO_STREAM(std::endl << ss.str());
         //printState();
+        */
     }
 
     void RoverHWInterface::write(const ros::Time& time, const ros::Duration& period)
@@ -172,7 +175,7 @@ namespace rover_base
         pub_left_motor_value_.publish(left_motor);
         pub_right_motor_value_.publish(right_motor);
 
-
+        /*
         const int width = 10;
         const char sep = ' ';
         std::stringstream ss;
@@ -202,6 +205,7 @@ namespace rover_base
                << std::endl;
         }
         ROS_INFO_STREAM(std::endl << ss.str());
+        */
     }
 
     void RoverHWInterface::loadURDF(const ros::NodeHandle &nh, std::string param_name)

@@ -38,27 +38,12 @@
   
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
     <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
-    <remap from="imu_link" to="/rover/imu_link"/>
+    <!--<remap from="imu_link" to="/rover/imu_link"/>-->
     <remap from="odom" to="$(arg odom_topic)"/>
   </node>
   
-  <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, dwb, base, teb or pose"/>
-  <arg name="move_forward_only" default="true"/>
-  
-  <!-- move_base -->
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    <rosparam file="$(find rover)/config/$(arg local_planner)_local_planner_params.yaml" command="load" />
-    <rosparam file="$(find rover)/config/move_base_params.yaml" command="load" />
-    
-    <!-- global costmap params -->
-    <rosparam file="$(find rover)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find rover)/config/costmap_global_params.yaml" command="load" />
-    <!-- local costmap params -->
-    <rosparam file="$(find rover)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find rover)/config/costmap_local_params.yaml" command="load" />
-    
-    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
-    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+    <param name="default_topic" value="/rover/mobile_base_controller/cmd_vel"/>
   </node>
 
   <!-- Publish the robot state -->
@@ -69,5 +54,7 @@
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/controller.rviz">
     <remap from="/joint_states" to="/rover/joint_states" />
   </node>
+  
+  <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />
 
 </launch>

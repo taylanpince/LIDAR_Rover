@@ -11,6 +11,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>std_msgs</depend>
+  <depend>move_base</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
