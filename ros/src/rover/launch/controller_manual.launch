@@ -6,11 +6,6 @@
   <arg name="cmd_vel_topic" default="/rover/mobile_base_controller/cmd_vel" />
   <arg name="odom_topic" default="/rover/mobile_base_controller/odom" />
   
-  <node pkg="tf" 
-      type="static_transform_publisher" 
-      name="imu_link_broadcaster" 
-      args="0 0 0 0 0 0 imu_base imu_link 100" />
-  
   <node name="rover_hardware_interface" 
     pkg="rover_hardware_interface" 
     type="rover_hardware_interface" 
@@ -36,9 +31,22 @@
     <remap from="~imu_link" to="imu_link" />
   </node>
   
+  <!-- Filter and fuse raw imu data -->
+  <!--<node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_madgwick" output="screen" respawn="false">
+    <param name="fixed_frame" value="odom" />
+    <param name="use_mag" value="false" />
+    <param name="publish_tf" value="false" />
+    <param name="use_magnetic_field_msg" value="false" />
+    <param name="world_frame" value="enu" />-->
+    <!--<param name="remove_gravity_vector" value="true" />-->
+    <!--<param name="orientation_stddev" value="0.05" />-->
+    <!--<remap from="imu/data_raw" to="/rover/imu_link" />
+    <remap from="imu/data" to="imu_link" />
+  </node>-->
+  
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
     <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
-    <!--<remap from="imu_link" to="/rover/imu_link"/>-->
+    <remap from="imu_link" to="/rover/imu_link"/>
     <remap from="odom" to="$(arg odom_topic)"/>
   </node>
   
@@ -50,6 +58,11 @@
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <param name="publish_frequency" value="10.0"/>
   </node>
+  
+  <node pkg="tf" 
+      type="static_transform_publisher" 
+      name="imu_link_broadcaster" 
+      args="0 0 0 0 0 0 imu_base imu_link 10" />
 
   <!-- Provide simulated control of the robot joint angles -->
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
