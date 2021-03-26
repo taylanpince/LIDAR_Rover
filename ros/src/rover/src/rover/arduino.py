@@ -4,8 +4,18 @@ from rover.commands import *
 
 
 class ArduinoController:
+    ENCODER_MIN_VALUE = 0
+    ENCODER_MAX_VALUE = 65535
+
     def __init__(self, conn):
         self.conn = conn
+        self.last_lmotor = 0
+        self.last_rmotor = 0
+        self.delta_lmotor = 0
+        self.delta_rmotor = 0
+        self.motor_range = ENCODER_MAX_VALUE + 1
+        self.motor_low_threshold = self.motor_range * 30 // 100
+        self.motor_hi_threshold = self.motor_range * 70 // 100
     
     def extract_messages(self, payload):
         messages = []
@@ -22,6 +32,16 @@ class ArduinoController:
         
         return messages
     
+    def get_motor_delta(self, new_value, last_value):
+        if last_value > self.motor_hi_threshold and new_value < self.motor_low_threshold:
+            # Wrapped around the upper limit
+            return new_value + self.motor_range - last_value
+        elif last_value < self.motor_low_threshold and new_value > self.motor_hi_threshold:
+            # Wrapped around the lower limit
+            return new_value - self.motor_range - last_value
+        else:
+            return new_value - last_value
+    
     def parse_message(self, payload):
         data_type = payload[0]
 
@@ -34,7 +54,13 @@ class ArduinoController:
             lmotor_data = int.from_bytes(payload[1:3], byteorder="big", signed=True)
             rmotor_data = int.from_bytes(payload[3:5], byteorder="big", signed=True)
             
-            return (data_type, (lmotor_data, rmotor_data))
+            self.delta_lmotor += self.get_motor_delta(lmotor_data, self.last_lmotor)
+            self.delta_rmotor += self.get_motor_delta(rmotor_data, self.last_rmotor)
+
+            self.last_lmotor = lmotor_data
+            self.last_rmotor = rmotor_data
+            
+            return (data_type, (self.delta_lmotor, self.delta_rmotor))
         elif data_type == INCOMING_DATA_TYPE_QUATERNION:
             w = int.from_bytes(payload[1:3], byteorder="big", signed=True)
             x = int.from_bytes(payload[3:5], byteorder="big", signed=True)
