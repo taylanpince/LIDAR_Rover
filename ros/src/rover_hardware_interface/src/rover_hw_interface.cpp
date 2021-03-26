@@ -28,7 +28,7 @@ namespace rover_base
         nh_.param<std::string>("mobile_base_controller/right_wheel", right_joint_name_, "right_wheel_joint");
         nh_.param<double>("mobile_base_controller/wheel_radius", wheel_radius_, 0.05);
         nh_.param<double>("mobile_base_controller/linear/x/max_velocity", max_velocity_, 0.2);
-        nh_.param<double>("encoder_ticks_per_rev", encoder_ticks_per_rev_, 2660.0);
+        nh_.param<double>("hardware_interface/encoder_ticks_per_rev", encoder_ticks_per_rev_, 2660.0);
 
         joint_names_[0] = left_joint_name_;
         joint_names_[1] = right_joint_name_;
@@ -55,7 +55,7 @@ namespace rover_base
         ROS_INFO("Initializing Rover Hardware Interface ...");
         num_joints_ = 2;
         ROS_INFO("Number of joints: %d", (int)num_joints_);
-        std::array<std::string, NUM_JOINTS> motor_names = {"left_motor", "right_motor"};
+        std::array<std::string, NUM_JOINTS> motor_names = {"left_wheel_motor", "right_wheel_motor"};
         for (unsigned int i = 0; i < num_joints_; i++)
         {
             // Create a JointStateHandle for each joint and register them with the 

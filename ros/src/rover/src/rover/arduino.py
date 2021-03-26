@@ -13,7 +13,7 @@ class ArduinoController:
         self.last_rmotor = 0
         self.delta_lmotor = 0
         self.delta_rmotor = 0
-        self.motor_range = ENCODER_MAX_VALUE + 1
+        self.motor_range = ArduinoController.ENCODER_MAX_VALUE + 1
         self.motor_low_threshold = self.motor_range * 30 // 100
         self.motor_hi_threshold = self.motor_range * 70 // 100
     
