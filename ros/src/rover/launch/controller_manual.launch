@@ -51,10 +51,16 @@
     <param name="publish_frequency" value="10.0"/>
   </node>
 
+  <!-- Provide simulated control of the robot joint angles -->
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="use_gui" value="False" />
+    <param name="rate" value="10.0"/>
+  </node>
+
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/controller.rviz">
-    <remap from="/joint_states" to="/rover/joint_states" />
+    <remap from="/rover/joint_states" to="/joint_states" />
   </node>
   
-  <node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />
+  <!--<node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />-->
 
 </launch>
