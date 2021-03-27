@@ -14,8 +14,8 @@ class ArduinoController:
         self.delta_lmotor = 0
         self.delta_rmotor = 0
         self.motor_range = ArduinoController.ENCODER_MAX_VALUE + 1
-        self.motor_low_threshold = self.motor_range * 30 // 100
-        self.motor_hi_threshold = self.motor_range * 70 // 100
+        self.motor_low_threshold = self.motor_range * 0.2
+        self.motor_hi_threshold = self.motor_range * 0.8
     
     def extract_messages(self, payload):
         messages = []
@@ -51,8 +51,8 @@ class ArduinoController:
         
             return (data_type, (pos, dist))
         elif data_type == INCOMING_DATA_TYPE_MOTOR:
-            lmotor_data = int.from_bytes(payload[1:3], byteorder="big", signed=True)
-            rmotor_data = int.from_bytes(payload[3:5], byteorder="big", signed=True)
+            lmotor_data = int.from_bytes(payload[1:3], byteorder="big", signed=False)
+            rmotor_data = int.from_bytes(payload[3:5], byteorder="big", signed=False)
             
             self.delta_lmotor += self.get_motor_delta(lmotor_data, self.last_lmotor)
             self.delta_rmotor += self.get_motor_delta(rmotor_data, self.last_rmotor)
