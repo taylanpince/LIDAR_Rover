@@ -31,36 +31,44 @@
     <remap from="~imu_link" to="imu_link" />
   </node>
   
+  <!-- Filter and fuse raw imu data -->
+  <!--<node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_madgwick" output="screen" respawn="false">
+    <param name="fixed_frame" value="odom" />
+    <param name="use_mag" value="false" />
+    <param name="publish_tf" value="false" />
+    <param name="use_magnetic_field_msg" value="false" />
+    <param name="world_frame" value="enu" />-->
+    <!--<param name="remove_gravity_vector" value="true" />-->
+    <!--<param name="orientation_stddev" value="0.05" />-->
+    <!--<remap from="imu/data_raw" to="/rover/imu_link" />
+    <remap from="imu/data" to="imu_link" />
+  </node>-->
+  
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
     <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
     <remap from="imu_link" to="/rover/imu_link"/>
     <remap from="odom" to="$(arg odom_topic)"/>
   </node>
   
-  <arg name="local_planner" default="dwa" doc="Local planner can be either dwa, dwb, base, teb or pose"/>
-  <arg name="move_forward_only" default="true"/>
-  
-  <!-- move_base -->
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
-    <rosparam file="$(find rover)/config/$(arg local_planner)_local_planner_params.yaml" command="load" />
-    <rosparam file="$(find rover)/config/move_base_params.yaml" command="load" />
-    
-    <!-- global costmap params -->
-    <rosparam file="$(find rover)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find rover)/config/costmap_global_params.yaml" command="load" />
-    <!-- local costmap params -->
-    <rosparam file="$(find rover)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find rover)/config/costmap_local_params.yaml" command="load" />
-    
-    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
-    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+    <param name="default_topic" value="/rover/mobile_base_controller/cmd_vel"/>
   </node>
 
   <!-- Publish the robot state -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
     <param name="publish_frequency" value="10.0"/>
   </node>
-
+  
+  <!-- Gmapping -->
+  <node pkg="gmapping" type="slam_gmapping" name="diffbot_slam_gmapping" output="screen">
+    <param name="base_frame" value="base_link"/>
+    <param name="odom_frame" value="odom"/>
+    <param name="map_frame"  value="map"/>
+    <rosparam command="load" file="$(find rover)/config/gmapping.yaml" />
+    <!-- remappings -->
+    <remap from="scan" to="/rover/scan_link"/>
+  </node>
+  
   <node pkg="tf" 
       type="static_transform_publisher" 
       name="imu_link_broadcaster" 
@@ -73,7 +81,9 @@
   </node>
 
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rover)/config/controller.rviz">
-    <remap from="/joint_states" to="/rover/joint_states" />
+    <remap from="/rover/joint_states" to="/joint_states" />
   </node>
+  
+  <!--<node name="rqt_reconfigure" pkg="rqt_reconfigure" type="rqt_reconfigure" />-->
 
 </launch>
