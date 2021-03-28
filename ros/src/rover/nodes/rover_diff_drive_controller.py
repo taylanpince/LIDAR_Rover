@@ -154,9 +154,9 @@ class RoverController:
         
         scan.angle_min = -math.pi
         scan.angle_max = math.pi
-        scan.angle_increment = (scan.angle_max - scan.angle_min) / (len(scan_ranges) - 1)
+        scan.angle_increment = (scan.angle_max - scan.angle_min) / len(scan_ranges)
         scan.scan_time = scan_time
-        scan.time_increment = scan_time / (len(scan_ranges) - 1)
+        scan.time_increment = scan_time / len(scan_ranges)
         scan.range_min = 0.1
         scan.range_max = 40.0
         

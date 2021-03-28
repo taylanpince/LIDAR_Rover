@@ -15,7 +15,7 @@ rover:
     left_wheel: 'left_wheel_joint'
     right_wheel: 'right_wheel_joint'
     
-    enable_odom_tf: false
+    enable_odom_tf: true
 
     # Wheel separation and diameter. These are both optional.
     # diff_drive_controller will attempt to read either one or both from the
