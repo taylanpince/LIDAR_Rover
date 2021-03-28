@@ -123,8 +123,6 @@ void setup() {
   pinMode(BRK_C, OUTPUT);
   pinMode(PWM_C, OUTPUT);
 
-  Fastwire::setup(200, true);
-
   PIDController.SetOutputLimits(30, 60);
   PIDController.SetSampleTime(PID_SAMPLE_TIME);
   PIDController.SetMode(AUTOMATIC);
@@ -304,11 +302,5 @@ void loop() {
       activePayload[payloadIndex - 2] = value;
       payloadIndex++;
     }
-  }
-
-  // Too much time since last command, stop
-  if (nowTime - lastMotorCommandTime > 1000) {
-    setMotorSpeed(MOTOR::LEFT, 0);
-    setMotorSpeed(MOTOR::RIGHT, 0);
   }
 }
