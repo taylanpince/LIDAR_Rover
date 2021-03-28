@@ -5,6 +5,7 @@ import sys
 import time
 import serial
 import math
+import json
 
 
 SCREEN_WIDTH = 600
@@ -121,8 +122,8 @@ class ArduinoController:
         
             return (data_type, (pos, dist))
         elif data_type == INCOMING_DATA_TYPE_MOTOR:
-            lmotor_data = int.from_bytes(payload[1:5], byteorder="big", signed=True)
-            rmotor_data = int.from_bytes(payload[5:9], byteorder="big", signed=True)
+            lmotor_data = int.from_bytes(payload[1:5], byteorder="big", signed=False)
+            rmotor_data = int.from_bytes(payload[5:9], byteorder="big", signed=False)
             
             return (data_type, (lmotor_data, rmotor_data))
         elif data_type == INCOMING_DATA_TYPE_QUATERNION:
@@ -220,6 +221,9 @@ def monitor_joystick():
     running = True
     scanning = False
     map_points = []
+    last_scan_start_time = None
+    scan_points = []
+    all_scans = []
     
     last_motor_time = 0
     left_motor_pos = 0
@@ -234,7 +238,7 @@ def monitor_joystick():
     right_ticks_at_full_power_begin = 0
     full_power_speed = 0
     full_power_enabled = False
-
+    
     while running:
         events = pygame.event.get()
 
@@ -255,7 +259,28 @@ def monitor_joystick():
         for command in incoming_commands:
             data_type, payload = command
 
-            if data_type == INCOMING_DATA_TYPE_MOTOR:
+            if data_type == INCOMING_DATA_TYPE_SCAN:
+                scanner_pos, scanner_dist = payload
+                
+                if len(scan_points) > 0:
+                    last_scan_pos, _ = scan_points[-1]
+                    
+                    if scanner_pos < last_scan_pos:
+                        scan_end_time = time.time()
+                        scan_delta_time = scan_end_time - last_scan_start_time
+                        
+                        all_scans.append({
+                            'scans': scan_points,
+                            'time': scan_delta_time,
+                        })
+
+                        scan_points = []
+                
+                if len(scan_points) == 0:
+                    last_scan_start_time = time.time()
+                
+                scan_points.append(payload)
+            elif data_type == INCOMING_DATA_TYPE_MOTOR:
                 new_left_motor_pos, new_right_motor_pos = payload
                 
                 left_delta = new_left_motor_pos - left_motor_pos
@@ -276,28 +301,30 @@ def monitor_joystick():
         printer.write(screen, "Last Full Power Speed: {:10.4f}".format(full_power_speed))
         printer.write(screen, "Left Motor: {}".format(left_motor_pos))
         printer.write(screen, "Right Motor: {}".format(right_motor_pos))
+        printer.write(screen, "Current Scan Points: {}".format(len(scan_points)))
+        printer.write(screen, "Completed Scans: {}".format(len(all_scans)))
         
-        if scanning:
-            printer.write(screen, "Scanning")
-            printer.indent()
-            angle = 360 * scanner_pos / AVG_STEPS_PER_SCAN
-            angle_r = math.radians(angle)
-            radius = (SCREEN_WIDTH / 2) * scanner_dist / MAX_SCAN_SIZE_CM
-            
-            x = SCREEN_CENTER + radius * math.cos(angle_r)
-            y = SCREEN_CENTER + radius * math.sin(angle_r)
-            
-            printer.write(screen, "Angle {} deg | Distance {} cm".format(angle, scanner_dist))
-            printer.unindent()
-            
-            map_points.append((x, y))
-            
-            if len(map_points) > TOTAL_MAP_SCAN_POINTS:
-                map_points.pop(0)
-
-        for index, pos in enumerate(map_points):
-            color = 255 - (255 * index / TOTAL_MAP_SCAN_POINTS)
-            pygame.draw.circle(screen, (color, color, color), pos, 5)
+        # if scanning:
+        #     printer.write(screen, "Scanning")
+        #     printer.indent()
+        #     angle = 360 * scanner_pos / AVG_STEPS_PER_SCAN
+        #     angle_r = math.radians(angle)
+        #     radius = (SCREEN_WIDTH / 2) * scanner_dist / MAX_SCAN_SIZE_CM
+        #
+        #     x = SCREEN_CENTER + radius * math.cos(angle_r)
+        #     y = SCREEN_CENTER + radius * math.sin(angle_r)
+        #
+        #     printer.write(screen, "Angle {} deg | Distance {} cm".format(angle, scanner_dist))
+        #     printer.unindent()
+        #
+        #     map_points.append((x, y))
+        #
+        #     if len(map_points) > TOTAL_MAP_SCAN_POINTS:
+        #         map_points.pop(0)
+        #
+        # for index, pos in enumerate(map_points):
+        #     color = 255 - (255 * index / TOTAL_MAP_SCAN_POINTS)
+        #     pygame.draw.circle(screen, (color, color, color), pos, 5)
         
         now = time.time_ns()
         
@@ -371,6 +398,12 @@ def monitor_joystick():
         
         pygame.display.flip()
         clock.tick(60)
+
+    if len(all_scans) > 0:
+        with open('scans.json', 'w') as f:
+            json.dump({
+                'scans': all_scans,
+            }, f)
     
     serial_conn.close()
     pygame.quit()
