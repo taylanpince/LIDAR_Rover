@@ -157,7 +157,7 @@ class RoverController:
         scan = LaserScan()
         
         scan.header.stamp = rospy.Time.now()
-        scan.header.frame_id = "scan"
+        scan.header.frame_id = "scan_link"
         
         scan.angle_min = math.radians(0.0)
         scan.angle_max = math.radians(359.0)
