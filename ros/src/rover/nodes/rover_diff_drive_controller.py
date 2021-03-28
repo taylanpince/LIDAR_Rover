@@ -3,6 +3,9 @@ import sys
 import time
 import serial
 import math
+import numpy as np
+
+from scipy import interpolate
 
 from std_msgs.msg import Int32, Float32
 from geometry_msgs.msg import Quaternion, Vector3
@@ -15,9 +18,9 @@ from rover.commands import *
 MAX_POWER = 255
 MIN_POWER = 125
 
-AVG_STEPS_PER_SCAN = 3560
-MAX_SCAN_SIZE_CM = 500
-TOTAL_MAP_SCAN_POINTS = 360 * 3
+TOTAL_SCAN_SAMPLES_PER_REV = 720
+MAX_STEPS_PER_SCAN_REV = 3640
+SCAN_X_SPACE_RADS = np.linspace(-math.pi, math.pi, TOTAL_SCAN_SAMPLES_PER_REV)
 
 PORT_NAME = "/dev/ttyUSB0"
 
@@ -128,51 +131,36 @@ class RoverController:
     
     def publish_scan(self, scan_publisher, scan_time, scans):
         """
-        LaserScan
-        std_msgs/Header header # timestamp in the header is the acquisition time of
-                                     # the first ray in the scan.
-                                     #
-                                     # in frame frame_id, angles are measured around
-                                     # the positive Z axis (counterclockwise, if Z is up)
-                                     # with zero angle being forward along the x axis
-
-        float32 angle_min            # start angle of the scan [rad]
-        float32 angle_max            # end angle of the scan [rad]
-        float32 angle_increment      # angular distance between measurements [rad]
-
-        float32 time_increment       # time between measurements [seconds] - if your scanner
-                                     # is moving, this will be used in interpolating position
-                                     # of 3d points
-        float32 scan_time            # time between scans [seconds]
-
-        float32 range_min            # minimum range value [m]
-        float32 range_max            # maximum range value [m]
-
-        float32[] ranges             # range data [m]
-                                     # (Note: values < range_min or > range_max should be discarded)
-        float32[] intensities        # intensity data [device-specific units].  If your
-                                     # device does not provide intensities, please leave
-                                     # the array empty.
+        Applies interpolation to the scan to make it fit the expected range exactly
+        Then publishes the scan measurements as a LaserScan message
         """
+        x_points = []
+        y_points = []
+
+        for pos, dist in scans:
+            if pos > MAX_STEPS_PER_SCAN_REV:
+                continue
+            
+            x_points.append(math.radians(360.0 * float(pos) / MAX_STEPS_PER_SCAN_REV) - math.pi)
+            y_points.append(dist)
+        
+        f = interpolate.interp1d(x_points, y_points, kind="nearest", fill_value="extrapolate")
+        scan_ranges = f(SCAN_X_SPACE_RADS)
+        
         scan = LaserScan()
         
         scan.header.stamp = rospy.Time.now()
         scan.header.frame_id = "scan_link"
         
-        scan.angle_min = math.radians(0.0)
-        scan.angle_max = math.radians(359.0)
-        scan.angle_increment = (scan.angle_max - scan.angle_min) / (len(scans) - 1)
+        scan.angle_min = -math.pi
+        scan.angle_max = math.pi
+        scan.angle_increment = (scan.angle_max - scan.angle_min) / (len(scan_ranges) - 1)
         scan.scan_time = scan_time
-        scan.time_increment = scan_time / (len(scans) - 1)
+        scan.time_increment = scan_time / (len(scan_ranges) - 1)
         scan.range_min = 0.1
         scan.range_max = 40.0
         
-        ranges = []
-        
-        for scan_pos, scan_dist in scans:
-            ranges.append(float(scan_dist) / 100.0)
-        
-        scan.ranges = ranges
+        scan.ranges = [dist / 100.0 for dist in scan_ranges]
         
         scan_publisher.publish(scan)
 
