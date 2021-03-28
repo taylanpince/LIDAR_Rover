@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Grid1
+        - /Map1
       Splitter Ratio: 0.5
     Tree Height: 477
   - Class: rviz/Selection
@@ -170,7 +171,7 @@ Visualization Manager:
       Marker Topic: /slam_toolbox/karto_graph_visualization
       Name: MarkerArray
       Namespaces:
-        slam_toolbox: true
+        {}
       Queue Size: 100
       Value: true
     - Angle Tolerance: 0.10000000149011612
@@ -212,7 +213,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -236,7 +237,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.631865978240967
+      Distance: 6.180074214935303
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1

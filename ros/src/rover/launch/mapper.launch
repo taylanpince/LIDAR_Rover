@@ -6,7 +6,7 @@
   <arg name="cmd_vel_topic" default="/rover/mobile_base_controller/cmd_vel" />
   <arg name="odom_topic" default="/rover/mobile_base_controller/odom" />
   
-  <param name="use_sim_time" value="true" />
+  <param name="use_sim_time" value="false" />
   
   <node name="rover_hardware_interface" 
     pkg="rover_hardware_interface" 
@@ -34,13 +34,13 @@
     <remap from="~imu_link" to="imu_link" />
     <remap from="~scan_link" to="scan_link" />
   </node>
-  
+  <!--
   <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_odom" clear_params="true"> 
     <rosparam command="load" file="$(find rover)/config/robot_localization.yaml" />
-    <!--<remap from="imu_link" to="/rover/imu_link"/>-->
+    <remap from="imu_link" to="/rover/imu_link"/>
     <remap from="odom" to="$(arg odom_topic)"/>
   </node>
-  
+  -->
   <!-- Gmapping -->
   <node pkg="gmapping" type="slam_gmapping" name="rover_slam_gmapping" output="screen">
     <param name="base_frame" value="base_link"/>
@@ -49,6 +49,7 @@
     <rosparam command="load" file="$(find rover)/config/gmapping.yaml" />
     <!-- remappings -->
     <remap from="scan" to="/rover/scan_link"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
   </node>
   
   <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
