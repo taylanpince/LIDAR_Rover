@@ -20,6 +20,7 @@ catkin_install_python(
         nodes/rover_manual_driver.py
         nodes/xbox_controller.py
         nodes/rover_diff_drive_controller.py
+        nodes/xbox_topic.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

@@ -7,7 +7,7 @@ import numpy as np
 
 from scipy import interpolate
 
-from std_msgs.msg import Int32, Float32
+from std_msgs.msg import Int32, Float32, Bool
 from geometry_msgs.msg import Quaternion, Vector3
 from sensor_msgs.msg import Imu, LaserScan
 
@@ -43,16 +43,27 @@ class RoverController:
 
         self.last_scan_start_time = None
         self.scan_points = []
-        self.activate_lidar = False
+        self.lidar_active = False
         
         self.serial_conn = serial.Serial(PORT_NAME, 57600, timeout=10)
         self.arduino = ArduinoController(self.serial_conn)
     
     def leftMotorCallback(self, speed):
-        self.left_speed = speed.data
+        self.left_speed = min(speed.data * (MAX_POWER - MIN_POWER) / 1200, 130)
         
     def rightMotorCallback(self, speed):
-        self.right_speed = speed.data
+        self.right_speed = min(speed.data * (MAX_POWER - MIN_POWER) / 1200, 130)
+        
+    def lidarStatusCallback(self, status):
+        if self.lidar_active == status.data:
+            return
+        
+        self.lidar_active = status.data
+        
+        if self.lidar_active:
+            self.arduino.send_button_command(SCAN_START_COMMAND)
+        else:
+            self.arduino.send_button_command(SCAN_STOP_COMMAND)
 
     def send_motor_command(self, motor, speed):
         if self.reverse_motor_direction:
@@ -62,7 +73,7 @@ class RoverController:
             motor_direction = DIRECTION_FORWARDS if speed >= 0 else DIRECTION_BACKWARDS
         
         if abs(speed) > 10:
-            motor_power = MIN_POWER + abs(speed)
+            motor_power = MIN_POWER + abs(int(speed))
         else:
             motor_power = 0
 
@@ -158,7 +169,7 @@ class RoverController:
         scan.scan_time = scan_time
         scan.time_increment = scan_time / len(scan_ranges)
         scan.range_min = 0.1
-        scan.range_max = 40.0
+        scan.range_max = 1.5
         
         scan.ranges = [dist / 100.0 for dist in scan_ranges]
         
@@ -177,9 +188,7 @@ class RoverController:
         
         rospy.Subscriber('~motor_left', Int32, self.leftMotorCallback)
         rospy.Subscriber('~motor_right', Int32, self.rightMotorCallback)
-        
-        if self.activate_lidar:
-            self.arduino.send_button_command(SCAN_START_COMMAND)
+        rospy.Subscriber('~scan_active', Bool, self.lidarStatusCallback)
         
         while not rospy.is_shutdown():
             incoming_commands = self.arduino.read_incoming_data()
